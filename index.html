@@ -1,0 +1,665 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2017-12-08 Fri 21:33 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Common Lisp function types</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="Nathanael Schweers" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2017 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">Common Lisp function types</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#orgb01b3e5">1. Using the Common Lisp type system</a>
+<ul>
+<li><a href="#orgce7018d">1.1. Closing remarks</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgb01b3e5" class="outline-2">
+<h2 id="orgb01b3e5"><span class="section-number-2">1</span> Using the Common Lisp type system</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+I often read online that people claimed that Common Lisp had a very expressive
+and generally just <i>good</i> type-system, but I never found a good tutorial on
+how to use it, apart from people just sprinkling declarations to local
+variables.  This always seemed just wrong, as this prevents the compiler from
+doing good inferencing, as the type of the function itself is not (globally)
+known.  As I have recently found more information on this and used it a
+little, I thought I’d write a little introduction.  So, without further ado,
+here is a toy program which would like some optimizing.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #7f7f7f;">(</span><span style="color: #a020f0;">in-package</span> #<span style="color: #483d8b;">:2017.day1.1</span><span style="color: #7f7f7f;">)</span>
+
+<span style="color: #7f7f7f;">(</span><span style="color: #a020f0;">declaim</span> <span style="color: #7f7f7f;">(</span>optimize <span style="color: #7f7f7f;">(</span>safety 1<span style="color: #7f7f7f;">)</span>
+                   <span style="color: #7f7f7f;">(</span>speed 3<span style="color: #7f7f7f;">)))</span>
+
+<span style="color: #7f7f7f;">(</span><span style="color: #a020f0;">defun</span> <span style="color: #0000ff;">captcha</span> <span style="color: #7f7f7f;">(</span>input-string <span style="color: #228b22;">&amp;key</span> <span style="color: #7f7f7f;">(</span>start 0<span style="color: #7f7f7f;">)</span> <span style="color: #7f7f7f;">(</span>end <span style="color: #7f7f7f;">(</span>length input-string<span style="color: #7f7f7f;">)))</span>
+  <span style="color: #7f7f7f;">(</span>bind <span style="color: #7f7f7f;">(((</span><span style="color: #483d8b;">:flet</span> summand-p <span style="color: #7f7f7f;">(</span>prev cur<span style="color: #7f7f7f;">))</span>
+          <span style="color: #7f7f7f;">(</span>char= prev cur<span style="color: #7f7f7f;">))</span>
+         <span style="color: #7f7f7f;">((</span><span style="color: #483d8b;">:labels</span> helper <span style="color: #7f7f7f;">(</span>sum prev index<span style="color: #7f7f7f;">))</span>
+          <span style="color: #7f7f7f;">(</span><span style="color: #a020f0;">cond</span> <span style="color: #7f7f7f;">((</span>&gt;= index end<span style="color: #7f7f7f;">)</span> sum<span style="color: #7f7f7f;">)</span>
+                <span style="color: #7f7f7f;">((</span>summand-p prev <span style="color: #7f7f7f;">(</span>aref input-string index<span style="color: #7f7f7f;">))</span>
+                 <span style="color: #7f7f7f;">(</span>helper <span style="color: #7f7f7f;">(</span>+ sum <span style="color: #7f7f7f;">(</span>digit-char-p prev<span style="color: #7f7f7f;">))</span>
+                         <span style="color: #7f7f7f;">(</span>aref input-string index<span style="color: #7f7f7f;">)</span>
+                         <span style="color: #7f7f7f;">(</span>1+ index<span style="color: #7f7f7f;">)))</span>
+                <span style="color: #7f7f7f;">(</span>t <span style="color: #7f7f7f;">(</span>helper sum <span style="color: #7f7f7f;">(</span>aref input-string index<span style="color: #7f7f7f;">)</span> <span style="color: #7f7f7f;">(</span>1+ index<span style="color: #7f7f7f;">))))))</span>
+    <span style="color: #7f7f7f;">(</span><span style="color: #a020f0;">if</span> <span style="color: #7f7f7f;">(</span>&gt; end 1<span style="color: #7f7f7f;">)</span>
+        <span style="color: #7f7f7f;">(</span>bind <span style="color: #7f7f7f;">((</span>sum <span style="color: #7f7f7f;">(</span>helper 0 <span style="color: #7f7f7f;">(</span>aref input-string start<span style="color: #7f7f7f;">)</span> 1<span style="color: #7f7f7f;">))</span>
+               <span style="color: #7f7f7f;">(</span>first-char <span style="color: #7f7f7f;">(</span>aref input-string start<span style="color: #7f7f7f;">)))</span>
+          <span style="color: #7f7f7f;">(</span><span style="color: #a020f0;">if</span> <span style="color: #7f7f7f;">(</span>char= first-char
+                     <span style="color: #7f7f7f;">(</span>aref input-string <span style="color: #7f7f7f;">(</span>1- end<span style="color: #7f7f7f;">)))</span>
+              <span style="color: #7f7f7f;">(</span>+ sum <span style="color: #7f7f7f;">(</span>digit-char-p first-char<span style="color: #7f7f7f;">))</span>
+              sum<span style="color: #7f7f7f;">))</span>
+        0<span style="color: #7f7f7f;">)))</span>
+
+<span style="color: #7f7f7f;">(</span>bind <span style="color: #7f7f7f;">((</span>input-string
+        <span style="color: #7f7f7f;">(</span>read-file-into-string
+         <span style="color: #7f7f7f;">(</span>make-pathname <span style="color: #483d8b;">:directory</span> '<span style="color: #7f7f7f;">(</span><span style="color: #483d8b;">:absolute</span> <span style="color: #483d8b;">:home</span> <span style="color: #8b2252;">"code"</span> <span style="color: #8b2252;">"clisp"</span>
+                                     <span style="color: #8b2252;">"adventofcode"</span> <span style="color: #8b2252;">"2017"</span> <span style="color: #8b2252;">"day1.1"</span><span style="color: #7f7f7f;">)</span>
+                        <span style="color: #483d8b;">:name</span> <span style="color: #8b2252;">"input"</span>
+                        <span style="color: #483d8b;">:type</span> <span style="color: #8b2252;">"txt"</span><span style="color: #7f7f7f;">))))</span>
+  <span style="color: #7f7f7f;">(</span>captcha input-string <span style="color: #483d8b;">:end</span> <span style="color: #7f7f7f;">(</span>1- <span style="color: #7f7f7f;">(</span>length input-string<span style="color: #7f7f7f;">))))</span>
+</pre>
+</div>
+
+<p>
+Among other libraries I use the <code>metabang-bind</code> package which provides the
+<code>bind</code> macro (a very practical alternative to <code>let</code>) and the popular
+<code>alexandria</code> library in order to easily read the contents of a file as a
+string.
+</p>
+
+<p>
+This program is the solution to the first part of the <a href="http://adventofcode.com/2017/day/1">first challenge</a> of
+<a href="https://adventofcode.com">Advent Of Code 2017</a>.
+</p>
+
+<p>
+The program sums all digits which are the same as the next digit in the input
+sequence.  In this case, the input is to be treated as if it were circular:
+if the first and last character are the same, the last character is also to be
+summed up.
+</p>
+
+<p>
+If you are using SLIME (as you should be) loading the code with C-c C-k will
+have three effects:
+</p>
+<ol class="org-ol">
+<li>The code will be compiled and loaded into your lisp image.</li>
+<li>Your repl and/or \*slime-compilation\* buffer will be full of notes.</li>
+<li>Your code will be underlined in various places.</li>
+</ol>
+
+<p>
+On my machine I get 25 efficiency notes, which means there are 25 places in
+which the compiler can do better given more type information.  Pressing M-n
+and M-p will bring you to the next and previous piece of code in your source
+code buffer, respectively.  The first part SBCL marks for me is in the
+argument list, of all places.  Note that I wrote this code the way it is in
+order to be able to skip over bits of input at the beginning and end.  I use
+it to skip over the trailing newline customary on UNIX systems.  Pressing M-n
+not only jumps there, it also focuses the buffer containing the notes on the
+appropriate entry if its open at the time.  Looking through the notes it is
+quite clear that the compiler knows where it could optimize, given enough type
+information.  So, lets give the compiler this information!
+</p>
+
+<p>
+Actually, before doing so, lets take some measurements.  Normally you’d
+provide types for debugging (as they can catch cases in which you pass in or
+receive values of types which you did not expect.  This deepens your
+understanding of the code you are writing.  The other reason is of course to
+make your code run faster.  Normally you’d hopefully do some profiling first
+in order to determine that the code you’re optimizing is actually worth
+optimizing.  But as this is a simple example to provide some code which we can
+type, we’ll optimize this function anyway.
+</p>
+
+<p>
+Here is how I did the measurements:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #7f7f7f;">(</span><span style="color: #a020f0;">defun</span> <span style="color: #0000ff;">measure</span> <span style="color: #7f7f7f;">()</span>
+  <span style="color: #7f7f7f;">(</span><span style="color: #a020f0;">declare</span> <span style="color: #7f7f7f;">(</span>optimize <span style="color: #7f7f7f;">(</span>speed 3<span style="color: #7f7f7f;">)))</span>
+  <span style="color: #7f7f7f;">(</span>bind <span style="color: #7f7f7f;">((</span>bench-size 100000000<span style="color: #7f7f7f;">)</span>
+         <span style="color: #7f7f7f;">(</span>long-str <span style="color: #7f7f7f;">(</span>make-array bench-size <span style="color: #483d8b;">:element-type</span> 'character<span style="color: #7f7f7f;">))</span>
+         <span style="color: #7f7f7f;">((</span><span style="color: #483d8b;">:labels</span> fill-input <span style="color: #7f7f7f;">(</span>index<span style="color: #7f7f7f;">))</span>
+          <span style="color: #7f7f7f;">(</span><span style="color: #a020f0;">when</span> <span style="color: #7f7f7f;">(</span>&lt; index <span style="color: #7f7f7f;">(</span>length long-str<span style="color: #7f7f7f;">))</span>
+            <span style="color: #7f7f7f;">(</span>setf <span style="color: #7f7f7f;">(</span>aref long-str index<span style="color: #7f7f7f;">)</span>
+                  <span style="color: #7f7f7f;">(</span>digit-char <span style="color: #7f7f7f;">(</span>random 10<span style="color: #7f7f7f;">)))</span>
+            <span style="color: #7f7f7f;">(</span>fill-input <span style="color: #7f7f7f;">(</span>1+ index<span style="color: #7f7f7f;">)))))</span>
+    <span style="color: #7f7f7f;">(</span>time <span style="color: #7f7f7f;">(</span>fill-input 0<span style="color: #7f7f7f;">))</span>
+    <span style="color: #7f7f7f;">(</span>time <span style="color: #7f7f7f;">(</span>captcha long-str<span style="color: #7f7f7f;">))))</span>
+</pre>
+</div>
+
+<p>
+On my slow old laptop, this is what I get as a result:
+</p>
+
+<pre class="example">
+DAY1.1&gt; (measure)
+Evaluation took:
+  5.486 seconds of real time
+  5.487866 seconds of total run time (5.384329 user, 0.103537 system)
+  100.04% CPU
+  7,315,952,756 processor cycles
+  0 bytes consed
+
+Evaluation took:
+  4.124 seconds of real time
+  4.125731 seconds of total run time (4.125564 user, 0.000167 system)
+  100.05% CPU
+  5,499,572,840 processor cycles
+  0 bytes consed
+
+45003023
+</pre>
+
+<p>
+So the actual call to <code>CAPTCHA</code> took just over 4 seconds.  Now that we’ve
+gotten this out of the way, let us move on.
+</p>
+
+<p>
+One way to do this is what I have mentioned in the introduction: locally
+declare the types of variables.  This works but is sub-optimal.  Lisp can do
+better: we can globally declare the type of the function:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #7f7f7f;">(</span><span style="color: #a020f0;">declaim</span> <span style="color: #7f7f7f;">(</span>ftype <span style="color: #7f7f7f;">(</span>function <span style="color: #7f7f7f;">(</span>string <span style="color: #228b22;">&amp;key</span> <span style="color: #7f7f7f;">(</span><span style="color: #483d8b;">:start</span> fixnum<span style="color: #7f7f7f;">)</span> <span style="color: #7f7f7f;">(</span><span style="color: #483d8b;">:end</span> fixnum<span style="color: #7f7f7f;">))</span>
+                          fixnum<span style="color: #7f7f7f;">)</span>
+                captcha<span style="color: #7f7f7f;">))</span>
+</pre>
+</div>
+
+<p>
+Just providing this declaration alone brings the number of efficiency notes
+down to 10.  Note that not all of these necessarily apply to the function
+CAPTCHA.  Now that we have brought the number of notes down it might be time
+to look at some of them.  A good place to start is with operations on the
+arguments, since this might reveal some tuning options.  The very first note
+SBCl gives me tells me that the first call to AREF cannot be optimized because
+the “upgraded element type of array is not known at compile time.”  It also
+mentions the function SB-KERNEL:HAIRY-DATA-VECTOR-REF/CHECK-BOUNDS, which has
+quite an intimidating name.  Sounds like a violent bear is checking your
+bounds against your will.
+</p>
+
+<p>
+This warning has to do with the distinction between array vs simple-array.  In
+Common Lisp strings are really just vectors and vectors are really just
+arrays.  Arrays in Lisp are actually quite versatile beasts.  They can hold
+any Lisp object, can be displaced, can have a fill pointer and can grow
+dynamically in size.  Sounds cool, but also slow.  It doesn’t just sound slow,
+it is!  This is where so called simple arrays come to play.  Arrays which are
+not simple can grow in size, which means we need an extra indirection.  The
+array object itself holds the size of the data, and a pointer to the actual
+data.  If the size is fixed, we can place the data into the string when the
+string is created and thus save us a costly load operation.  As strings are
+just arrays with a fixed element type, the same is also true for strings and
+simple-strings.
+</p>
+
+<p>
+Can we simply declare the argument in question to be a simple-string, instead
+of a string?  This depends on how we want to use it, and where we get it.
+This function works fine if the string is simple, but what happens if we put
+in a non-simple string?  It turns out that most strings you’ll handle turn out
+to be simple, but lets construct one which is not.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #7f7f7f;">(</span>bind <span style="color: #7f7f7f;">((</span>string <span style="color: #7f7f7f;">(</span>make-array 0 <span style="color: #483d8b;">:element-type</span> 'character <span style="color: #483d8b;">:fill-pointer</span> 0
+                           <span style="color: #483d8b;">:adjustable</span> t<span style="color: #7f7f7f;">))</span>
+       <span style="color: #7f7f7f;">(</span>part-one <span style="color: #8b2252;">"11"</span><span style="color: #7f7f7f;">)</span>
+       <span style="color: #7f7f7f;">(</span>part-two <span style="color: #8b2252;">"22"</span><span style="color: #7f7f7f;">))</span>
+  <span style="color: #7f7f7f;">(</span>iter <span style="color: #7f7f7f;">(</span>for c in-string part-one<span style="color: #7f7f7f;">)</span>
+        <span style="color: #7f7f7f;">(</span>vector-push-extend c string<span style="color: #7f7f7f;">))</span>
+  <span style="color: #7f7f7f;">(</span>iter <span style="color: #7f7f7f;">(</span>for c in-string part-two<span style="color: #7f7f7f;">)</span>
+        <span style="color: #7f7f7f;">(</span>vector-push-extend c string<span style="color: #7f7f7f;">))</span>
+  <span style="color: #7f7f7f;">(</span>captcha string<span style="color: #7f7f7f;">))</span>
+</pre>
+</div>
+
+<p>
+The code snippet above constructs a string which is <i>not</i> simple.  With the
+declaration above this code works fine.
+</p>
+
+<p>
+Now on to some more aggressive typing:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #7f7f7f;">(</span><span style="color: #a020f0;">declaim</span> <span style="color: #7f7f7f;">(</span>ftype <span style="color: #7f7f7f;">(</span>function <span style="color: #7f7f7f;">(</span>simple-string <span style="color: #228b22;">&amp;key</span> <span style="color: #7f7f7f;">(</span><span style="color: #483d8b;">:start</span> fixnum<span style="color: #7f7f7f;">)</span> <span style="color: #7f7f7f;">(</span><span style="color: #483d8b;">:end</span> fixnum<span style="color: #7f7f7f;">))</span>
+                          fixnum<span style="color: #7f7f7f;">)</span>
+                captcha<span style="color: #7f7f7f;">))</span>
+</pre>
+</div>
+
+<p>
+Now we have declared that the first argument to the function must not only be
+a string, but a simple one.  Apart from just trying to compile and/or run some
+code, how can we find out whether we can use such a declaration?  For
+starters, we can find out what string literals turn out to be:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #7f7f7f;">(</span>type-of <span style="color: #8b2252;">"foo"</span><span style="color: #7f7f7f;">)</span>  <span style="color: #b22222;">;; </span><span style="color: #b22222;">=&gt; (SIMPLE-ARRAY CHARACTER (3))</span>
+</pre>
+</div>
+
+<p>
+So <code>READ</code> constructs simple strings for us.  What about the function
+<code>READ-FILE-INTO-STRING</code>?
+</p>
+
+<p>
+Common Lisp comes with a handy function called DESCRIBE, which will tell you
+what it knows about a given symbol.  SLIME has a little helper for this bound
+to C-c C-d C-d.  The latter will use the symbol under point, if any, and will
+prompt for one otherwise.
+</p>
+
+<p>
+This is what the function prints:
+</p>
+
+<pre class="example">
+  DAY1.1&gt; (describe 'read-file-into-string)
+ALEXANDRIA.0.DEV:READ-FILE-INTO-STRING
+  [symbol]
+
+READ-FILE-INTO-STRING names a compiled function:
+  Lambda-list: (PATHNAME &amp;KEY (BUFFER-SIZE 4096) EXTERNAL-FORMAT)
+  Derived type: (FUNCTION
+                 (T &amp;KEY (:BUFFER-SIZE T) (:EXTERNAL-FORMAT T))
+                 (VALUES SIMPLE-STRING &amp;OPTIONAL))
+  Documentation:
+    Return the contents of the file denoted by PATHNAME as a fresh string.
+
+    The EXTERNAL-FORMAT parameter will be passed directly to WITH-OPEN-FILE
+    unless it's NIL, which means the system default.
+  Source file: /home/schweers/quicklisp/dists/quicklisp/software/alexandria-20170830-git/io.lisp
+</pre>
+
+<p>
+The important bit for us is the last line of the Derived type.  It says
+(VALUES SIMPLE-STRING &amp;OPTIONAL).  The gist of it that we get a
+simple-string.  Now that we know this, we know that we actually can use the
+declaration above to make the argument a simple-string.  This brings the notes
+down to 4, two of which are in <code>CAPTCHA</code>.  Lets take a closer look at the
+notes.
+</p>
+
+<p>
+Both are on lines which look pretty much the same.  Yes, this is a sign that
+my code is not as well abstracted as it could be, lets pretend that wasn’t the
+case as its not that relevant to the discussion at hand.  The Notes are
+somewhat lengthy, which is sometimes a good thing:
+</p>
+
+<pre class="example">
+day1.1.lisp:26:26:
+  note:
+    forced to do GENERIC-+ (cost 10)
+          unable to do inline fixnum arithmetic (cost 2) because:
+          The first argument is a T, not a FIXNUM.
+          The second argument is a (OR (MOD 36) NULL), not a FIXNUM.
+          The result is a (VALUES NUMBER &amp;OPTIONAL), not a (VALUES FIXNUM &amp;REST T).
+          unable to do inline (signed-byte 64) arithmetic (cost 5) because:
+          The first argument is a T, not a (SIGNED-BYTE 64).
+          The second argument is a (OR (MOD 36) NULL), not a (SIGNED-BYTE 64).
+          The result is a (VALUES NUMBER &amp;OPTIONAL), not a (VALUES (SIGNED-BYTE 64)
+                                                                   &amp;REST T).
+          etc.
+</pre>
+
+<p>
+This is the line in question (the other one is almost the same, as you can
+see if you’re following along at home):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #7f7f7f;">(</span>+ sum <span style="color: #7f7f7f;">(</span>digit-char-p prev<span style="color: #7f7f7f;">))</span>
+</pre>
+</div>
+
+<p>
+So the compiler complains that it can’t do fixnum arithmetic because it
+doesn’t know the type of the first argument.  Note that SBCL does extensive
+source code re-writing, so the arguments are often in a different order.  The
+notes go on claiming that the second argument is a (OR (MOD 36) NULL).  This
+comes from the call to <code>DIGIT-CHAR-P</code> which takes a radix which may be up
+to 36.  This is why it has such a seemingly weird type.  It can also return
+null which is not so pleasant.  As we have complaints on both arguments, we
+know that the compiler indeed does not know that SUM will be a number, let
+alone what kind of number.  Time to change that, but how?  We have essentially
+two options.  The first is to locally declare the function type of <code>HELPER</code>,
+which is often the best thing, as it forces us to think about the types of
+what goes into the function and what comes out.  On a global function this
+also helps the compiler optimize code which calls the function.  But, just to
+show what the type inferencer can do, we’ll only declare the argument locally,
+inside the function:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #7f7f7f;">(</span><span style="color: #a020f0;">defun</span> <span style="color: #0000ff;">captcha</span> <span style="color: #7f7f7f;">(</span>input-string <span style="color: #228b22;">&amp;key</span> <span style="color: #7f7f7f;">(</span>start 0<span style="color: #7f7f7f;">)</span> <span style="color: #7f7f7f;">(</span>end <span style="color: #7f7f7f;">(</span>length input-string<span style="color: #7f7f7f;">)))</span>
+  <span style="color: #7f7f7f;">(</span>bind <span style="color: #7f7f7f;">(((</span><span style="color: #483d8b;">:flet</span> summand-p <span style="color: #7f7f7f;">(</span>prev cur<span style="color: #7f7f7f;">))</span>
+          <span style="color: #7f7f7f;">(</span>char= prev cur<span style="color: #7f7f7f;">))</span>
+         <span style="color: #7f7f7f;">((</span><span style="color: #483d8b;">:labels</span> helper <span style="color: #7f7f7f;">(</span>sum prev index<span style="color: #7f7f7f;">))</span>
+          <span style="color: #7f7f7f;">(</span><span style="color: #a020f0;">declare</span> <span style="color: #7f7f7f;">(</span>type fixnum sum<span style="color: #7f7f7f;">))</span>
+          <span style="color: #7f7f7f;">(</span><span style="color: #a020f0;">cond</span> <span style="color: #7f7f7f;">((</span>&gt;= index end<span style="color: #7f7f7f;">)</span> sum<span style="color: #7f7f7f;">)</span>
+                <span style="color: #7f7f7f;">((</span>summand-p prev <span style="color: #7f7f7f;">(</span>aref input-string index<span style="color: #7f7f7f;">))</span>
+                 <span style="color: #7f7f7f;">(</span>helper <span style="color: #7f7f7f;">(</span>+ sum <span style="color: #7f7f7f;">(</span>digit-char-p prev<span style="color: #7f7f7f;">))</span>
+                         <span style="color: #7f7f7f;">(</span>aref input-string index<span style="color: #7f7f7f;">)</span>
+                         <span style="color: #7f7f7f;">(</span>1+ index<span style="color: #7f7f7f;">)))</span>
+                <span style="color: #7f7f7f;">(</span>t <span style="color: #7f7f7f;">(</span>helper sum <span style="color: #7f7f7f;">(</span>aref input-string index<span style="color: #7f7f7f;">)</span> <span style="color: #7f7f7f;">(</span>1+ index<span style="color: #7f7f7f;">))))))</span>
+    <span style="color: #7f7f7f;">(</span><span style="color: #a020f0;">if</span> <span style="color: #7f7f7f;">(</span>&gt; end 1<span style="color: #7f7f7f;">)</span>
+        <span style="color: #7f7f7f;">(</span>bind <span style="color: #7f7f7f;">((</span>sum <span style="color: #7f7f7f;">(</span>helper 0 <span style="color: #7f7f7f;">(</span>aref input-string start<span style="color: #7f7f7f;">)</span> 1<span style="color: #7f7f7f;">))</span>
+               <span style="color: #7f7f7f;">(</span>first-char <span style="color: #7f7f7f;">(</span>aref input-string start<span style="color: #7f7f7f;">)))</span>
+          <span style="color: #7f7f7f;">(</span><span style="color: #a020f0;">if</span> <span style="color: #7f7f7f;">(</span>char= first-char
+                     <span style="color: #7f7f7f;">(</span>aref input-string <span style="color: #7f7f7f;">(</span>1- end<span style="color: #7f7f7f;">)))</span>
+              <span style="color: #7f7f7f;">(</span>+ sum <span style="color: #7f7f7f;">(</span>digit-char-p first-char<span style="color: #7f7f7f;">))</span>
+              sum<span style="color: #7f7f7f;">))</span>
+        0<span style="color: #7f7f7f;">)))</span>
+</pre>
+</div>
+
+<p>
+If you now recompile the file, you will notice that all notes inside our
+function are gone!  So by providing a type hint at the right place the
+compiler could figure out the rest.
+</p>
+
+<p>
+Now, let’s see if this actually provided any performance benefit.  I’ll just
+run the measurement from before again, this time with the type hints in place:
+</p>
+
+<pre class="example">
+DAY1.1&gt; (measure)
+Evaluation took:
+  5.510 seconds of real time
+  5.510885 seconds of total run time (5.414208 user, 0.096677 system)
+  100.02% CPU
+  7,347,098,384 processor cycles
+  0 bytes consed
+
+Evaluation took:
+  1.974 seconds of real time
+  1.975156 seconds of total run time (1.971790 user, 0.003366 system)
+  [ Run times consist of 0.106 seconds GC time, and 1.870 seconds non-GC time. ]
+  100.05% CPU
+  2,631,428,000 processor cycles
+  5,824 bytes consed
+
+45002838
+</pre>
+
+<p>
+So we’re down to under 2 seconds.  For such a toy example this is not that
+bad, especially if we consider that I already wrote this code with some
+performance in mind (not too much, mind you).  If your code is using linked
+lists (which it probably shouldn’t be doing, unless you’re writing macro code)
+the benefit will probably be much more significant.  As lists are completely
+heterogeneous the type system cannot place many meaningful constraints on
+them.  The best one can do on lists is to take values out of a list and
+provide a local declaration for the resulting variable.
+</p>
+</div>
+<div id="outline-container-orgce7018d" class="outline-3">
+<h3 id="orgce7018d"><span class="section-number-3">1.1</span> Closing remarks</h3>
+<div class="outline-text-3" id="text-1-1">
+<p>
+This post is just a very brief introduction to the topic, but I felt that
+there is not so much information out there on declaring function types.  If
+you want to know more about this I can recommend the CMUCL manual, especially
+the sections on advanced compiler use.  Most of what is documented for CMUCL
+is true for SBCL.  Lots of examples of using types are given which are useful
+for other implementations too.
+</p>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Nathanael Schweers</p>
+<p class="date">Created: 2017-12-08 Fri 21:33</p>
+<p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>

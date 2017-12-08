@@ -1,0 +1,341 @@
+#+TITLE: Common Lisp function types
+#+AUTHOR: Nathanael Schweers
+* Using the Common Lisp type system
+  I often read online that people claimed that Common Lisp had a very expressive
+  and generally just /good/ type-system, but I never found a good tutorial on
+  how to use it, apart from people just sprinkling declarations to local
+  variables.  This always seemed just wrong, as this prevents the compiler from
+  doing good inferencing, as the type of the function itself is not (globally)
+  known.  As I have recently found more information on this and used it a
+  little, I thought I’d write a little introduction.  So, without further ado,
+  here is a toy program which would like some optimizing.
+
+  #+BEGIN_SRC lisp
+    (in-package #:2017.day1.1)
+
+    (declaim (optimize (safety 1)
+                       (speed 3)))
+
+    (defun captcha (input-string &key (start 0) (end (length input-string)))
+      (bind (((:flet summand-p (prev cur))
+              (char= prev cur))
+             ((:labels helper (sum prev index))
+              (cond ((>= index end) sum)
+                    ((summand-p prev (aref input-string index))
+                     (helper (+ sum (digit-char-p prev))
+                             (aref input-string index)
+                             (1+ index)))
+                    (t (helper sum (aref input-string index) (1+ index))))))
+        (if (> end 1)
+            (bind ((sum (helper 0 (aref input-string start) 1))
+                   (first-char (aref input-string start)))
+              (if (char= first-char
+                         (aref input-string (1- end)))
+                  (+ sum (digit-char-p first-char))
+                  sum))
+            0)))
+
+    (bind ((input-string
+            (read-file-into-string
+             (make-pathname :directory '(:absolute :home "code" "clisp"
+                                         "adventofcode" "2017" "day1.1")
+                            :name "input"
+                            :type "txt"))))
+      (captcha input-string :end (1- (length input-string))))
+  #+END_SRC
+
+  Among other libraries I use the =metabang-bind= package which provides the
+  =bind= macro (a very practical alternative to =let=) and the popular
+  =alexandria= library in order to easily read the contents of a file as a
+  string.
+
+  This program is the solution to the first part of the [[http://adventofcode.com/2017/day/1][first challenge]] of
+  [[https://adventofcode.com][Advent Of Code 2017]].
+
+  The program sums all digits which are the same as the next digit in the input
+  sequence.  In this case, the input is to be treated as if it were circular:
+  if the first and last character are the same, the last character is also to be
+  summed up.
+
+  If you are using SLIME (as you should be) loading the code with C-c C-k will
+  have three effects:
+  1. The code will be compiled and loaded into your lisp image.
+  2. Your repl and/or \*slime-compilation\* buffer will be full of notes.
+  3. Your code will be underlined in various places.
+
+  On my machine I get 25 efficiency notes, which means there are 25 places in
+  which the compiler can do better given more type information.  Pressing M-n
+  and M-p will bring you to the next and previous piece of code in your source
+  code buffer, respectively.  The first part SBCL marks for me is in the
+  argument list, of all places.  Note that I wrote this code the way it is in
+  order to be able to skip over bits of input at the beginning and end.  I use
+  it to skip over the trailing newline customary on UNIX systems.  Pressing M-n
+  not only jumps there, it also focuses the buffer containing the notes on the
+  appropriate entry if its open at the time.  Looking through the notes it is
+  quite clear that the compiler knows where it could optimize, given enough type
+  information.  So, lets give the compiler this information!
+
+  Actually, before doing so, lets take some measurements.  Normally you’d
+  provide types for debugging (as they can catch cases in which you pass in or
+  receive values of types which you did not expect.  This deepens your
+  understanding of the code you are writing.  The other reason is of course to
+  make your code run faster.  Normally you’d hopefully do some profiling first
+  in order to determine that the code you’re optimizing is actually worth
+  optimizing.  But as this is a simple example to provide some code which we can
+  type, we’ll optimize this function anyway.
+
+  Here is how I did the measurements:
+
+  #+BEGIN_SRC lisp
+    (defun measure ()
+      (declare (optimize (speed 3)))
+      (bind ((bench-size 100000000)
+             (long-str (make-array bench-size :element-type 'character))
+             ((:labels fill-input (index))
+              (when (< index (length long-str))
+                (setf (aref long-str index)
+                      (digit-char (random 10)))
+                (fill-input (1+ index)))))
+        (time (fill-input 0))
+        (time (captcha long-str))))
+  #+END_SRC
+
+  On my slow old laptop, this is what I get as a result:
+
+  #+BEGIN_EXAMPLE
+    DAY1.1> (measure)
+    Evaluation took:
+      5.486 seconds of real time
+      5.487866 seconds of total run time (5.384329 user, 0.103537 system)
+      100.04% CPU
+      7,315,952,756 processor cycles
+      0 bytes consed
+
+    Evaluation took:
+      4.124 seconds of real time
+      4.125731 seconds of total run time (4.125564 user, 0.000167 system)
+      100.05% CPU
+      5,499,572,840 processor cycles
+      0 bytes consed
+
+    45003023
+  #+END_EXAMPLE
+
+  So the actual call to =CAPTCHA= took just over 4 seconds.  Now that we’ve
+  gotten this out of the way, let us move on.
+
+  One way to do this is what I have mentioned in the introduction: locally
+  declare the types of variables.  This works but is sub-optimal.  Lisp can do
+  better: we can globally declare the type of the function:
+
+  #+BEGIN_SRC lisp
+    (declaim (ftype (function (string &key (:start fixnum) (:end fixnum))
+                              fixnum)
+                    captcha))
+  #+END_SRC
+
+  Just providing this declaration alone brings the number of efficiency notes
+  down to 10.  Note that not all of these necessarily apply to the function
+  CAPTCHA.  Now that we have brought the number of notes down it might be time
+  to look at some of them.  A good place to start is with operations on the
+  arguments, since this might reveal some tuning options.  The very first note
+  SBCl gives me tells me that the first call to AREF cannot be optimized because
+  the “upgraded element type of array is not known at compile time.”  It also
+  mentions the function SB-KERNEL:HAIRY-DATA-VECTOR-REF/CHECK-BOUNDS, which has
+  quite an intimidating name.  Sounds like a violent bear is checking your
+  bounds against your will.
+
+  This warning has to do with the distinction between array vs simple-array.  In
+  Common Lisp strings are really just vectors and vectors are really just
+  arrays.  Arrays in Lisp are actually quite versatile beasts.  They can hold
+  any Lisp object, can be displaced, can have a fill pointer and can grow
+  dynamically in size.  Sounds cool, but also slow.  It doesn’t just sound slow,
+  it is!  This is where so called simple arrays come to play.  Arrays which are
+  not simple can grow in size, which means we need an extra indirection.  The
+  array object itself holds the size of the data, and a pointer to the actual
+  data.  If the size is fixed, we can place the data into the string when the
+  string is created and thus save us a costly load operation.  As strings are
+  just arrays with a fixed element type, the same is also true for strings and
+  simple-strings.
+
+  Can we simply declare the argument in question to be a simple-string, instead
+  of a string?  This depends on how we want to use it, and where we get it.
+  This function works fine if the string is simple, but what happens if we put
+  in a non-simple string?  It turns out that most strings you’ll handle turn out
+  to be simple, but lets construct one which is not.
+
+  #+BEGIN_SRC lisp
+    (bind ((string (make-array 0 :element-type 'character :fill-pointer 0
+                               :adjustable t))
+           (part-one "11")
+           (part-two "22"))
+      (iter (for c in-string part-one)
+            (vector-push-extend c string))
+      (iter (for c in-string part-two)
+            (vector-push-extend c string))
+      (captcha string))
+  #+END_SRC
+
+  The code snippet above constructs a string which is /not/ simple.  With the
+  declaration above this code works fine.
+
+  Now on to some more aggressive typing:
+
+  #+BEGIN_SRC lisp
+    (declaim (ftype (function (simple-string &key (:start fixnum) (:end fixnum))
+                              fixnum)
+                    captcha))
+  #+END_SRC
+
+  Now we have declared that the first argument to the function must not only be
+  a string, but a simple one.  Apart from just trying to compile and/or run some
+  code, how can we find out whether we can use such a declaration?  For
+  starters, we can find out what string literals turn out to be:
+
+  #+BEGIN_SRC lisp
+    (type-of "foo")  ;; => (SIMPLE-ARRAY CHARACTER (3))
+  #+END_SRC
+
+  So =READ= constructs simple strings for us.  What about the function
+  =READ-FILE-INTO-STRING=?
+
+  Common Lisp comes with a handy function called DESCRIBE, which will tell you
+  what it knows about a given symbol.  SLIME has a little helper for this bound
+  to C-c C-d C-d.  The latter will use the symbol under point, if any, and will
+  prompt for one otherwise.
+
+  This is what the function prints:
+
+  #+BEGIN_EXAMPLE
+  DAY1.1> (describe 'read-file-into-string)
+ALEXANDRIA.0.DEV:READ-FILE-INTO-STRING
+  [symbol]
+
+READ-FILE-INTO-STRING names a compiled function:
+  Lambda-list: (PATHNAME &KEY (BUFFER-SIZE 4096) EXTERNAL-FORMAT)
+  Derived type: (FUNCTION
+                 (T &KEY (:BUFFER-SIZE T) (:EXTERNAL-FORMAT T))
+                 (VALUES SIMPLE-STRING &OPTIONAL))
+  Documentation:
+    Return the contents of the file denoted by PATHNAME as a fresh string.
+
+    The EXTERNAL-FORMAT parameter will be passed directly to WITH-OPEN-FILE
+    unless it's NIL, which means the system default.
+  Source file: /home/schweers/quicklisp/dists/quicklisp/software/alexandria-20170830-git/io.lisp
+  #+END_EXAMPLE
+
+  The important bit for us is the last line of the Derived type.  It says
+  (VALUES SIMPLE-STRING &OPTIONAL).  The gist of it that we get a
+  simple-string.  Now that we know this, we know that we actually can use the
+  declaration above to make the argument a simple-string.  This brings the notes
+  down to 4, two of which are in =CAPTCHA=.  Lets take a closer look at the
+  notes.
+
+  Both are on lines which look pretty much the same.  Yes, this is a sign that
+  my code is not as well abstracted as it could be, lets pretend that wasn’t the
+  case as its not that relevant to the discussion at hand.  The Notes are
+  somewhat lengthy, which is sometimes a good thing:
+
+  #+BEGIN_EXAMPLE
+    day1.1.lisp:26:26:
+      note:
+        forced to do GENERIC-+ (cost 10)
+              unable to do inline fixnum arithmetic (cost 2) because:
+              The first argument is a T, not a FIXNUM.
+              The second argument is a (OR (MOD 36) NULL), not a FIXNUM.
+              The result is a (VALUES NUMBER &OPTIONAL), not a (VALUES FIXNUM &REST T).
+              unable to do inline (signed-byte 64) arithmetic (cost 5) because:
+              The first argument is a T, not a (SIGNED-BYTE 64).
+              The second argument is a (OR (MOD 36) NULL), not a (SIGNED-BYTE 64).
+              The result is a (VALUES NUMBER &OPTIONAL), not a (VALUES (SIGNED-BYTE 64)
+                                                                       &REST T).
+              etc.
+  #+END_EXAMPLE
+
+  This is the line in question (the other one is almost the same, as you can
+  see if you’re following along at home):
+
+  #+BEGIN_SRC lisp
+    (+ sum (digit-char-p prev))
+  #+END_SRC
+
+  So the compiler complains that it can’t do fixnum arithmetic because it
+  doesn’t know the type of the first argument.  Note that SBCL does extensive
+  source code re-writing, so the arguments are often in a different order.  The
+  notes go on claiming that the second argument is a (OR (MOD 36) NULL).  This
+  comes from the call to =DIGIT-CHAR-P= which takes a radix which may be up
+  to 36.  This is why it has such a seemingly weird type.  It can also return
+  null which is not so pleasant.  As we have complaints on both arguments, we
+  know that the compiler indeed does not know that SUM will be a number, let
+  alone what kind of number.  Time to change that, but how?  We have essentially
+  two options.  The first is to locally declare the function type of =HELPER=,
+  which is often the best thing, as it forces us to think about the types of
+  what goes into the function and what comes out.  On a global function this
+  also helps the compiler optimize code which calls the function.  But, just to
+  show what the type inferencer can do, we’ll only declare the argument locally,
+  inside the function:
+
+  #+BEGIN_SRC lisp
+    (defun captcha (input-string &key (start 0) (end (length input-string)))
+      (bind (((:flet summand-p (prev cur))
+              (char= prev cur))
+             ((:labels helper (sum prev index))
+              (declare (type fixnum sum))
+              (cond ((>= index end) sum)
+                    ((summand-p prev (aref input-string index))
+                     (helper (+ sum (digit-char-p prev))
+                             (aref input-string index)
+                             (1+ index)))
+                    (t (helper sum (aref input-string index) (1+ index))))))
+        (if (> end 1)
+            (bind ((sum (helper 0 (aref input-string start) 1))
+                   (first-char (aref input-string start)))
+              (if (char= first-char
+                         (aref input-string (1- end)))
+                  (+ sum (digit-char-p first-char))
+                  sum))
+            0)))
+  #+END_SRC
+
+  If you now recompile the file, you will notice that all notes inside our
+  function are gone!  So by providing a type hint at the right place the
+  compiler could figure out the rest.
+
+  Now, let’s see if this actually provided any performance benefit.  I’ll just
+  run the measurement from before again, this time with the type hints in place:
+
+  #+BEGIN_EXAMPLE
+    DAY1.1> (measure)
+    Evaluation took:
+      5.510 seconds of real time
+      5.510885 seconds of total run time (5.414208 user, 0.096677 system)
+      100.02% CPU
+      7,347,098,384 processor cycles
+      0 bytes consed
+
+    Evaluation took:
+      1.974 seconds of real time
+      1.975156 seconds of total run time (1.971790 user, 0.003366 system)
+      [ Run times consist of 0.106 seconds GC time, and 1.870 seconds non-GC time. ]
+      100.05% CPU
+      2,631,428,000 processor cycles
+      5,824 bytes consed
+
+    45002838
+  #+END_EXAMPLE
+
+  So we’re down to under 2 seconds.  For such a toy example this is not that
+  bad, especially if we consider that I already wrote this code with some
+  performance in mind (not too much, mind you).  If your code is using linked
+  lists (which it probably shouldn’t be doing, unless you’re writing macro code)
+  the benefit will probably be much more significant.  As lists are completely
+  heterogeneous the type system cannot place many meaningful constraints on
+  them.  The best one can do on lists is to take values out of a list and
+  provide a local declaration for the resulting variable.
+** Closing remarks
+   This post is just a very brief introduction to the topic, but I felt that
+   there is not so much information out there on declaring function types.  If
+   you want to know more about this I can recommend the CMUCL manual, especially
+   the sections on advanced compiler use.  Most of what is documented for CMUCL
+   is true for SBCL.  Lots of examples of using types are given which are useful
+   for other implementations too.
